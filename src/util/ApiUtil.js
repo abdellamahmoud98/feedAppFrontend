@@ -81,12 +81,17 @@ export const loginApi = async (username, password) => {
     const url = `${API_BASE_URL}/user/login`;
     const apiResponse = await axios.post(url, { username, password });
     if (apiResponse.status === 200) {
+
+      //userdata will consist of the body of the response 
+      //token is the token we extract from the header- authintication
       const payLoad = {
         userData: apiResponse.data,
-        token: apiResponse.headers.authorization,
+        token: apiResponse.headers.authorization, //grant the jwt token 
       };
       response = frameResponse(1, payLoad);
     }
+          // response= frameResponse(1,)
+
 } catch (err) {
     if (err.response) {
       response = frameResponse(0, err.response.data.message);
