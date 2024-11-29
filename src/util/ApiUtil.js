@@ -102,3 +102,26 @@ export const loginApi = async (username, password) => {
 }
 
 };
+
+
+//this function makes an API to call to http://localhost:8080/userreset/{emailId}- emailId is passed as path variable 
+export const forgotPasswordApi = async (email) => {
+  //setting the insitial value of state
+  let response = frameResponse();
+  
+  try {
+    const url = `${API_BASE_URL}/user/reset/${email}`;
+    const apiResponse = await axios.get(url);
+    if (apiResponse.status === 200) {
+      response = frameResponse(1);
+    }
+} catch (err) {
+    if (err.response) {
+      response = frameResponse(0, err.response.data.message);
+    }
+    console.log(err);
+} finally {
+    return response;
+}
+};
+
