@@ -125,3 +125,41 @@ export const forgotPasswordApi = async (email) => {
 }
 };
 
+// this function makes an API call to http://localhost:8080/user/rest
+//new password is passed as a request body 
+// token (we received in the email) is passed into the header under Authorization 
+
+export const resetPasswordApi = async (token, password) => {
+ // setting the insital value of status to 0 and payload to "invalid request. please try again later"
+  let response = frameResponse();
+
+  try {
+    const url = `${API_BASE_URL}/user/reset`;
+    const apiResponse = await axios.post(
+      url,
+      {
+        password,
+      },
+      { headers: { Authorization: frameToken(token) } }
+    );
+    if (apiResponse.status === 200) {
+      response = frameResponse(1);
+    }
+} catch (err) {
+    if (err.response) {
+      response = frameResponse(0, err.response.data.message);
+    }
+    console.log(err);
+} finally {
+    return response;
+
+
+
+
+}
+
+
+};
+
+
+
