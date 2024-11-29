@@ -158,8 +158,4 @@ export const resetPasswordApi = async (token, password) => {
 
 }
 
-
 };
-
-
-
