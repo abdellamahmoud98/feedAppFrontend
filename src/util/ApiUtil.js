@@ -45,3 +45,28 @@ export const registerApi = async (
     return response
   }
 }
+
+//this function makes an API call to the http:localhost:8080/user/verifay/email in the backend
+//this accepts token as a paramater wgich is recived from the verifaction email (that )
+
+export const verifyEmailApi = async (token) => {
+  let response = frameResponse()
+
+  try {
+    const url = `${API_BASE_URL}/user/verify/email`;
+    const apiResponse = await axios.get(url, {
+      headers: { Authorization: frameToken(token) },
+    });
+    
+    if (apiResponse.status === 200) {
+      response = frameResponse(1, apiResponse.data)
+    }
+  } catch (err) {
+    if (err.response) {
+      response = frameResponse(0, err.response.data.message)
+    }
+    console.log(err)
+  } finally {
+    return response
+  }
+}
