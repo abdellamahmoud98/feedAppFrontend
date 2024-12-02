@@ -25,3 +25,8 @@ body,
   height: 85vh;
 }
 
+.cropper {
+  width: 50vw;
+  height: 50vh;
+  background: #ddd;
+}
