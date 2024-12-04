@@ -28,7 +28,7 @@ const MyFeeds = () => {
     if (apiResponse.status === 1) {
       let feedsDataNew = [];
       if (loadPageNumber !== 0) {
-        feedsDataNew = feedsData;
+        feedsDataNew = feedsData; // we are adding feed data into feed data new
       }
       feedsDataNew.push(...apiResponse.payLoad.content);
       setFeedsData(feedsDataNew);

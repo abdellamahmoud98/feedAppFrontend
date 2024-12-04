@@ -299,3 +299,46 @@ export const getMyFeedsApi = async (token, pageNumber) => {
     return response;
   }
 };
+
+// POST request -> http://localhost:8080/user/update
+//with a request body 
+//Token passed to the header of the response
+
+export const updateBasicProfileApi = async (
+  token,
+  password,
+  emailId,
+  firstName,
+  lastName,
+  phone
+) => {
+  // setting the insital value of status to 0  and pay load to "Invalid request. Please try again later."
+  let response = frameResponse();
+  try {
+    const url = `${API_BASE_URL}/user/update`;
+    const apiResponse = await axios.post(
+      url,
+      {
+        password,
+        emailId,
+        firstName,
+        lastName,
+        phone,
+      },
+      { headers: { Authorization: frameToken(token) } }
+    );
+    //if the response 200 Ok then the payload with body of the response (apiResponse.data)
+    //det the status to 1
+    if (apiResponse.status === 200) {
+      response = frameResponse(1, apiResponse.data);
+    }
+  } catch (err) {
+    if (err.response) {
+      response = frameResponse(0, err.response.data.message);
+    }
+    console.log(err);
+  } finally {
+    return response;
+}
+};
+
