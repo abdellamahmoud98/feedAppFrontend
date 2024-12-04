@@ -1,7 +1,62 @@
-import React from "react";
+import React, { useEffect, useState, useContext } from "react";
+import UpdateBasicProfile from "../../components/UpdateBasicProfile";
+import UpdatePublicProfile from "../../components/UpdatePublicProfile";
+
+import { AppContext } from "../../context/applicationContext";
+import LoadingIndicator from "../../components/LoadingIndicator";
+
+import { sessionApi } from "../../util/ApiUtil";
 
 const Profile = () => {
-  return <>Profile Page</>;
+  const appContext = useContext(AppContext);
+  const token = appContext.getSession(); // retrive the token from application context using get session()-> which has
+
+  const [userData, setUserData] = useState(undefined);
+
+  const loadProfile = async () => {
+    const apiResponse = await sessionApi(token);
+    // if the response code is 200k, we set the userData to apiresponse.payload(which is the body of the response )
+    if (apiResponse.status === 1) {
+      setUserData(apiResponse.payLoad);
+    }
+  };
+
+  useEffect(() => {
+    document.title = "Profile | Feed App";
+    loadProfile();
+  }, []);
+
+  if (!userData) {
+    return <LoadingIndicator />;
+  }
+
+  const publicProfile = userData.profile ? userData.profile : undefined;
+
+  return (
+    <main className="grid grid-cols-1 lg:grid-cols-2 gap-6 my-12 md:mx-12 w-2xl container px-2 mx-auto">
+      <div>
+        {/* {#UpdaateBasicProfile Component} */}
+        <UpdateBasicProfile
+          password={userData.password}
+          emailId={userData.emailId}
+          firstName={userData.firstName}
+          lastName={userData.lastName}
+          phone={userData.phone}
+        />
+      </div>
+
+      <div>
+        {/* {#UpdatePublicProfile Component} */}
+        <UpdatePublicProfile
+          bio={publicProfile && publicProfile.bio}
+          city={publicProfile && publicProfile.city}
+          country={publicProfile && publicProfile.country}
+          headline={publicProfile && publicProfile.headline}
+          picture={publicProfile && publicProfile.picture}
+        />
+      </div>
+    </main>
+  );
 };
 
 export default Profile;
