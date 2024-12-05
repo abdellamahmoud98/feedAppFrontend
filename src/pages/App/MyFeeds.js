@@ -1,13 +1,9 @@
 import React, { useEffect, useContext, useState } from "react";
-
 import InfiniteScroll from "react-infinite-scroll-component";
-
 import MyProfile from "../../components/MyProfile";
 import FeedCard from "../../components/FeedCard";
-
 import { AppContext } from "../../context/applicationContext";
 import LoadingIndicator from "../../components/LoadingIndicator";
-
 import { getMyFeedsApi } from "../../util/ApiUtil";
 
 const MyFeeds = () => {
@@ -19,6 +15,11 @@ const MyFeeds = () => {
   const [pageNumber, setPageNumber] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
+  useEffect(() => {
+    document.title = "My Feeds | Feed App";
+    getMyFeeds(0);
+  }, []);
+
   const getMyFeeds = async (loadPageNumber) => {
     if (loadPageNumber === 0) {
       setFeedsData([]);
@@ -28,7 +29,7 @@ const MyFeeds = () => {
     if (apiResponse.status === 1) {
       let feedsDataNew = [];
       if (loadPageNumber !== 0) {
-        feedsDataNew = feedsData; // we are adding feed data into feed data new
+        feedsDataNew = feedsData;
       }
       feedsDataNew.push(...apiResponse.payLoad.content);
       setFeedsData(feedsDataNew);
@@ -43,66 +44,55 @@ const MyFeeds = () => {
     }
   };
 
-  useEffect(() => {
-    document.title = "My Feeds | Feed App";
-    getMyFeeds(0);
-  }, []);
-
   if (!userData) {
     return <LoadingIndicator />;
   }
 
   return (
     <main className="grid grid-cols-1 lg:grid-cols-2 gap-6 my-12 mx-0 md:mx-12 w-2xl container px-2 mx-auto">
-      {<MyProfile />}
+      {/* {#MyProfile Component} */}
+      <MyProfile />
       <article>
-        {
-          <InfiniteScroll
-            dataLength={feedsData.length}
-            next={() => getMyFeeds(pageNumber)}
-            hasMore={hasMore}
-            endMessage={
-              <p className="text-center">
-                <b>Yay! You have seen it all.</b>
-              </p>
-            }
-            refreshFunction={() => getMyFeeds(0)}
-            pullDownToRefresh
-            pullDownToRefreshThreshold={50}
-            pullDownToRefreshContent={
-              <h3 className="text-center">&#8595; Pull down to refresh</h3>
-            }
-            releaseToRefreshContent={
-              <h3 className="text-center">&#8593; Release to refresh</h3>
-            }
-          >
-            <div className="mt-3">
-              {feedsData.map(
-                ({
-                  feedId,
-                  picture,
-                  content,
-                  createdOn,
-                  feedMetaData,
-                  user,
-                }) => (
-                  <FeedCard
-                    key={feedId}
-                    feedId={feedId}
-                    picture={picture}
-                    content={content}
-                    createdOn={createdOn}
-                    username={user.username}
-                    firstName={user.firstName}
-                    lastName={user.lastName}
-                    profilePicture={user.profile.picture}
-                    feedMetaData={feedMetaData}
-                  />
-                )
-              )}
-            </div>
-          </InfiniteScroll>
-        }
+        {/* {#FeedCard Component} */}
+        <InfiniteScroll
+          dataLength={feedsData.length}
+          next={() => getMyFeeds(pageNumber)}
+          hasMore={hasMore}
+          endMessage={
+            <p className="text-center">
+              <b>Yay! You have seen it all.</b>
+            </p>
+          }
+          refreshFunction={() => getMyFeeds(0)}
+          pullDownToRefresh
+          pullDownToRefreshThreshold={50}
+          pullDownToRefreshContent={
+            <h3 className="text-center">&#8595; Pull down to refresh</h3>
+          }
+          releaseToRefreshContent={
+            <h3 className="text-center">&#8593; Release to refresh</h3>
+          }
+        >
+          <div className="mt-3">
+            {feedsData.map(
+              ({ feedId, picture, content, createdOn, feedMetaData, user }) => (
+                <FeedCard
+                  loadOnDelete={getMyFeeds}
+                  key={feedId}
+                  feedId={feedId}
+                  picture={picture}
+                  content={content}
+                  createdOn={createdOn}
+                  username={user.username}
+                  firstName={user.firstName}
+                  lastName={user.lastName}
+                  profilePicture={user.profile.picture}
+                  feedMetaData={feedMetaData}
+                />
+              )
+            )}
+          </div>
+        </InfiniteScroll>
       </article>
     </main>
   );

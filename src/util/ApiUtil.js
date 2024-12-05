@@ -342,3 +342,24 @@ export const updateBasicProfileApi = async (
 }
 };
 
+export const deleteFeedApi = async (token, feedId) => {
+  let response = frameResponse();
+
+  try {
+    const url = `${API_BASE_URL}/feeds/${feedId}`;
+    const apiResponse = await axios.delete(url, {
+      headers: { Authorization: frameToken(token) },
+    });
+    if (apiResponse.status === 200) {
+      response = frameResponse(1);
+    }
+  } catch (err) {
+    if (err.response) {
+      response = frameResponse(0, err.response.data.message);
+    } else {
+      console.log(err);
+    }
+  } finally {
+    return response;
+  }
+};

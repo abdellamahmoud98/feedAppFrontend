@@ -2,111 +2,147 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import Moment from "react-moment";
-
 import { AppContext } from "../context/applicationContext";
-
 import { addFeedMetaDataApi } from "../util/ApiUtil";
+import { deleteFeedApi } from "../util/ApiUtil";
 
 const FeedCard = ({
-    feedId,
-    picture,
-    content,
-    createdOn,
-    username,
-    firstName,
-    lastName,
-    profilePicture,
-    feedMetaData = []
-  }) => {
-    const formikRef = useRef();
+  feedId,
+  picture,
+  content,
+  createdOn,
+  username,
+  firstName,
+  lastName,
+  profilePicture,
+  loadOnDelete = undefined,
+  feedMetaData = [],
+}) => {
+  const formikRef = useRef();
 
-    const appContext = useContext(AppContext);
-    const token = appContext.getSession();
-    const userData = appContext.getUserData();
-    
-    const [isFetching, setIsFetching] = useState(false);
-    const [noOfLikes, setNoOfLikes] = useState(0);
-    const [userLiked, setUserLiked] = useState(false);
-    const [comments, setComments] = useState([]);
-    const addFeedMetaData = async (isLike, comment = "") => {
-        if (!isFetching) {
-          setIsFetching(true);
-    
-          const apiResponse = await addFeedMetaDataApi(
-            token,
-            feedId,
-            isLike,
-            comment
-          );
-          if (apiResponse.status === 1) {
-            if (comment) {
-              formikRef.current.resetForm();
-              const commentsData = comments;
-              commentsData.push({
-                cComment: comment,
-                cCreatedOn: "now",
-                cFirstName: userData.firstName,
-                cLastName: userData.lastName,
-                cPicture: userData.profile.picture,
-              });
-              setComments(commentsData);
-            } else {
-              setNoOfLikes(noOfLikes + 1);
-              setUserLiked(true);
-            }
-          }
-          setIsFetching(false);
+  const appContext = useContext(AppContext);
+  const token = appContext.getSession();
+  const userData = appContext.getUserData();
+
+  const [isFetching, setIsFetching] = useState(false);
+  const [noOfLikes, setNoOfLikes] = useState(0);
+  const [userLiked, setUserLiked] = useState(false);
+  const [comments, setComments] = useState([]);
+
+  useEffect(() => {
+    const commentsData = [];
+    let likesCount = 0;
+    for (const metaData of feedMetaData) {
+      const { isLike, createdOn, comment, user } = metaData;
+      if (isLike) {
+        likesCount++;
+        if (!userLiked && userData.userId === user.userId) {
+          setUserLiked(true);
         }
-      };
+      } else {
+        commentsData.push({
+          cComment: comment,
+          cCreatedOn: createdOn,
+          cFirstName: user.firstName,
+          cLastName: user.lastName,
+          cPicture: user.profile.picture,
+        });
+      }
+    }
+    setComments(commentsData);
+    setNoOfLikes(likesCount);
+  }, [feedMetaData]);
 
-      const addLike = () => {
-        if (!userLiked) {
-          addFeedMetaData(true);
+  const CommentCard = ({
+    cFirstName,
+    cLastName,
+    cPicture,
+    cComment,
+    cCreatedOn,
+  }) => (
+    <div className="text-black p-4 antialiased flex">
+      <img className="rounded-full h-8 w-8 mr-2 mt-1 " src={cPicture} />
+      <div>
+        <div className="bg-gray-100 rounded-lg px-4 pt-2 pb-2.5">
+          <div className="font-semibold text-sm leading-relaxed">
+            {cFirstName} {cLastName}
+          </div>
+          <div className="text-xs leading-snug md:leading-normal">
+            {cComment}
+          </div>
+        </div>
+        <div className="text-xs  mt-0.5 text-gray-500">
+          {cCreatedOn !== "now" ? (
+            <Moment format="LLL">{cCreatedOn}</Moment>
+          ) : (
+            "now"
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const addFeedMetaData = async (isLike, comment = "") => {
+    if (!isFetching) {
+      setIsFetching(true);
+
+      const apiResponse = await addFeedMetaDataApi(
+        token,
+        feedId,
+        isLike,
+        comment
+      );
+      if (apiResponse.status === 1) {
+        if (comment) {
+          formikRef.current.resetForm();
+          const commentsData = comments;
+          commentsData.push({
+            cComment: comment,
+            cCreatedOn: "now",
+            cFirstName: userData.firstName,
+            cLastName: userData.lastName,
+            cPicture: userData.profile.picture,
+          });
+          setComments(commentsData);
+        } else {
+          setNoOfLikes(noOfLikes + 1);
+          setUserLiked(true);
         }
-    };
+      }
+      setIsFetching(false);
+    }
+  };
 
-    const addComment = async (values) => {
-        addFeedMetaData(false, values.comment);
-    };
+  const addLike = () => {
+    if (!userLiked) {
+      addFeedMetaData(true);
+    }
+  };
 
+  const addComment = async (values) => {
+    addFeedMetaData(false, values.comment);
+  };
 
-    const AddCommentSchema = Yup.object().shape({
-        comment: Yup.string().required("Required"),
-      });
+  const AddCommentSchema = Yup.object().shape({
+    comment: Yup.string().required("Required"),
+  });
 
+  const deleteFeed = async () => {
+    if (!isFetching) {
+      setIsFetching(true);
+      const response = await deleteFeedApi(token, feedId);
+      if (response.status === 1) {
+        loadOnDelete(0);
+      }
+      setIsFetching(false);
+    }
+  };
 
-
-
-    useEffect(() => {
-        const commentsData = [];
-        let likesCount = 0;
-        for (const metaData of feedMetaData) {
-          const { isLike, createdOn, comment, user } = metaData;
-          if (isLike) {
-            likesCount++;
-            if (!userLiked && userData.userId === user.userId) {
-              setUserLiked(true);
-            }
-          } else {
-            commentsData.push({
-              cComment: comment,
-              cCreatedOn: createdOn,
-              cFirstName: user.firstName,
-              cLastName: user.lastName,
-              cPicture: user.profile.picture,
-            });
-          }
-        }
-        setComments(commentsData);
-        setNoOfLikes(likesCount);
-      }, [feedMetaData]);
-
-
-
-    
-    return (<div className="bg-white shadow rounded-lg mb-5">
-        <div className="flex w-full border-t border-gray-100">
-          <div className="flex flex-row w-full py-2">
+  return (
+    <div className="bg-white shadow rounded-lg mb-5">
+      <div className="flex w-full border-t border-gray-100">
+        <div className="flex flex-row w-full py-2">
+          {/* {#CardHeader Section} */}
           <div className="flex flex-row px-2 py-3 mx-3">
             <img
               className="w-12 h-12 object-cover rounded-full shadow cursor-pointer"
@@ -126,16 +162,40 @@ const FeedCard = ({
                 </div>
               </div>
             </div>
-</div>          </div>
+          </div>
         </div>
-          {/* {#DeleteFeedButton Section} */}
-        <div className="border-b border-gray-100"></div>
-        <div className="text-gray-400 font-medium text-sm mb-7 mt-6 mx-3 px-2">
+      </div>
+      {/* {#DeleteFeedButton Section} */}
+      <div className="border-b border-gray-100">
+        {loadOnDelete && (
+          <div
+            className="flex flex-col justify-center m-5"
+            onClick={deleteFeed}
+          >
+            <span className="transition ease-out duration-300 hover:bg-gray-50 h-8 px-2 py-2 text-center rounded-full text-gray-100 cursor-pointer">
+              <svg
+                className="h-4 w-4 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="currentColor"
+                  d="M7 21q-.825 0-1.413-.588T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.588 1.413T17 21H7ZM17 6H7v13h10V6ZM9 17h2V8H9v9Zm4 0h2V8h-2v9ZM7 6v13V6Z"
+                />
+              </svg>
+            </span>
+          </div>
+        )}
+      </div>
+      {/* {#CardBody Section} */}
+      <div className="text-gray-400 font-medium text-sm mb-7 mt-6 mx-3 px-2">
         <img className="rounded w-full" src={picture} />
-  </div>
+      </div>
 
-<div className="text-gray-800 text-sm mb-6 mx-3 px-2">{content}</div>  
-        <div className="flex w-full border-t border-gray-100">
+      <div className="text-gray-800 text-sm mb-6 mx-3 px-2">{content}</div>
+
+      <div className="flex w-full border-t border-gray-100">
+        {/* {#LikeAndCommentCount Section} */}
         <div className="mt-3 mx-5 flex flex-row text-xs" onClick={addLike}>
           <span className="transition ease-out duration-300 hover:bg-gray-50 bg-gray-100 h-8 px-2 py-2 text-center rounded-full text-gray-100 cursor-pointer">
             <svg
@@ -154,8 +214,8 @@ const FeedCard = ({
               ></path>
             </svg>
           </span>
-  </div>
-   <div className="mt-3 mx-5 w-full flex justify-end text-xs">
+        </div>
+        <div className="mt-3 mx-5 w-full flex justify-end text-xs">
           <div className="flex text-gray-700  rounded-md mb-2 mr-4 items-center">
             Likes:{" "}
             <div className="ml-1 text-gray-400 text-ms"> {noOfLikes}</div>
@@ -164,8 +224,10 @@ const FeedCard = ({
             Comments:
             <div className="ml-1 text-gray-400 text-ms"> {comments.length}</div>
           </div>
-  </div>        </div>
-  <div key={comments}>
+        </div>
+      </div>
+      {/* {#Comments Section} */}
+      <div key={comments}>
         {comments.map(
           (
             { cFirstName, cLastName, cPicture, cComment, cCreatedOn },
@@ -181,10 +243,9 @@ const FeedCard = ({
             />
           )
         )}
-</div>        
-
-
-<Formik
+      </div>
+      {/* {#AddCommentForm Section} */}
+      <Formik
         innerRef={formikRef}
         initialValues={{
           comment: "",
@@ -226,46 +287,9 @@ const FeedCard = ({
             </div>
           </Form>
         )}
-</Formik>
-  </div>);
-
-
-  };
-  
-
-  export default FeedCard;
-
-
-  const CommentCard = ({
-    cFirstName,
-    cLastName,
-    cPicture,
-    cComment,
-    cCreatedOn,
-}) => (  <div className="text-black p-4 antialiased flex">
-    <img className="rounded-full h-8 w-8 mr-2 mt-1 " src={cPicture} />
-    <div>
-      <div className="bg-gray-100 rounded-lg px-4 pt-2 pb-2.5">
-        <div className="font-semibold text-sm leading-relaxed">
-          {cFirstName} {cLastName}
-        </div>
-        <div className="text-xs leading-snug md:leading-normal">
-          {cComment}
-        </div>
-      </div>
-      <div className="text-xs  mt-0.5 text-gray-500">
-        {cCreatedOn !== "now" ? (
-          <Moment format="LLL">{cCreatedOn}</Moment>
-        ) : (
-          "now"
-        )}
-      </div>
+      </Formik>
     </div>
-  </div>);
+  );
+};
 
-  
-
-
-
-
-  
+export default FeedCard;
